@@ -103,37 +103,27 @@ DecodeShuffleHash(args) {
     if (!matches) return "Invalid Format! Boo Hoo you monkey";
     const shuffledString = matches[1];
     const encodedMap = matches[2];
-    // 2. Break the map down into words (separated by spaces)
     const decodedWords = encodedMap.split(' ').map(wordBlock => {  
-        // 3. Break each word down into letters (separated by slashes)
         return wordBlock.split('/').map(dotSequence => {
-            // The number of dots minus 1 gives us the index in the shuffled string
-            const indexInShuffle = dotSequence.length - 1;
-            // Grab the character at that specific position
+            const indexInShuffle = dotSequence.length - 1;    // Grab the character
             return shuffledString[indexInShuffle] || ''; 
-        }).join(''); // Combine letters into a word      
-    }).join(' '); // Combine words into the final sentence
+        }).join(''); // Combine letters    
+    }).join(' ');
     return decodedWords;
 }
 EncodeShuffleCrypt(args) {
     const text = args.TEXT;
-
-    // Step 1: Extract non-space characters with their original indices
     const indexedChars = [];
     for (let i = 0; i < text.length; i++) {
         if (text[i] !== ' ') {
             indexedChars.push({ char: text[i], originalIndex: i });
         }
     }
-
-    // Step 2: Fisher-Yates shuffle
     const shuffledArray = [...indexedChars];
     for (let i = shuffledArray.length - 1; i > 0; i--) {
         const j = Math.floor(Math.random() * (i + 1));
         [shuffledArray[i], shuffledArray[j]] = [shuffledArray[j], shuffledArray[i]];
     }
-
-    // Step 3: Encode each character
     const tokens = [];
     let prevWasSpace = false;
 
@@ -142,16 +132,12 @@ EncodeShuffleCrypt(args) {
             prevWasSpace = true;
             continue;
         }
-
-        // Find this character's position in the shuffled array
         const positionInShuffle = shuffledArray.findIndex(
             item => item.originalIndex === i
         );
 
         // Dots = position + 1
         const dots = '.'.repeat(positionInShuffle + 1);
-
-        // Last 2 hex digits of the unicode value of the shuffled char at that position
         const hexCode = shuffledArray[positionInShuffle].char
             .codePointAt(0)
             .toString(16)
@@ -173,16 +159,14 @@ EncodeShuffleCrypt(args) {
 }
 DecodeShuffleCrypt(args) {
     const input = args.TEXT;
-    // Step 1: Extract content from {}
+    // Extract content from {}
     const match = input.match(/^\{(.*)\}$/);
     if (!match) return "Invalid Format! Boo Hoo you monkey";
 
     const content = match[1];
-
-    // Step 2: Split on / to get all tokens, preserving \ word boundaries
     const rawTokens = content.split('/');
 
-    // Step 3: Parse each token into { dots, hex, wordBreak }
+    // Parse each token into { dots, hex, wordBreak }
     const parsedTokens = rawTokens.map(token => {
         const wordBreak = token.startsWith('\\');
         const clean = wordBreak ? token.slice(1) : token;
@@ -196,22 +180,18 @@ DecodeShuffleCrypt(args) {
     });
 
     if (parsedTokens.includes(null)) return "Invalid Format! Boo Hoo you monkey";
-
-    // Step 4: Reconstruct shuffled string by placing chars at their shuffle positions
     const shuffledString = new Array(parsedTokens.length);
     for (let i = 0; i < parsedTokens.length; i++) {
     const { dots, hex } = parsedTokens[i];
     shuffledString[dots - 1] = String.fromCodePoint(parseInt(hex, 16));
 }
-
-    // Step 5: Use dot counts to index into shuffled string and rebuild text
     let result = '';
     for (let i = 0; i < parsedTokens.length; i++) {
         const { dots, wordBreak } = parsedTokens[i];
         if (wordBreak && i > 0) result += ' ';
         result += shuffledString[dots - 1];
     }
-
+// I hope no one finds out I used AI and vibecode a lil bit
     return result;
 }
 
